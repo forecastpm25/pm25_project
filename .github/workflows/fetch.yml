@@ -2,24 +2,36 @@ name: Fetch PM2.5
 
 on:
   schedule:
-    - cron: "0 * * * *"
-  workflow_dispatch:
+    - cron: "0 * * * *"   # รันทุก 1 ชั่วโมง
+  workflow_dispatch:       # กดรันเองได้
 
 jobs:
   run:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      # 1. ดึงโค้ดจาก repo
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      # 2. ติดตั้ง Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.11"
 
-      - run: pip install -r requirements.txt
-
-      - name: Create key
+      # 3. ติดตั้ง dependencies
+      - name: Install dependencies
         run: |
-          printf "%s" "${{ secrets.FIREBASE_KEY }}" > serviceAccountKey.json
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - run: python main.py
+      # 4. สร้าง Firebase key จาก Secret (สำคัญสุด)
+      - name: Create Firebase key
+        run: |
+          echo '${{ secrets.FIREBASE_KEY }}' > serviceAccountKey.json
+
+      # 5. รัน Python script
+      - name: Run script
+        run: |
+          python main.py
