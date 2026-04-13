@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. ดึงโค้ดจาก repo
+      # 1. ดึงโค้ด
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -26,20 +26,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 4. สร้างไฟล์ Firebase key (สำคัญสุด)
+      # 4. สร้าง Firebase key จาก base64
       - name: Create Firebase key
         run: |
-          cat <<EOF > serviceAccountKey.json
-${{ secrets.FIREBASE_KEY }}
-EOF
+          echo "${{ secrets.FIREBASE_KEY_BASE64 }}" | base64 --decode > serviceAccountKey.json
 
-      # 5. (Optional) เช็คว่าไฟล์ถูกสร้าง
+      # 5. เช็คว่าไฟล์ถูกสร้าง (optional)
       - name: Check key file
         run: |
           echo "File size:"
           wc -c serviceAccountKey.json
 
-      # 6. รัน Python
+      # 6. รันโปรแกรม
       - name: Run script
         run: |
           python main.py
