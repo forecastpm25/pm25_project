@@ -9,7 +9,7 @@ firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-API_KEY = "YOUR_API_KEY"
+API_KEY = "pm25-29c12-firebase-adminsdk-fbsvc-6ff93e435a"
 
 STATIONS = [
     {"id": "5030", "collection": "pm25_station_5030"},
