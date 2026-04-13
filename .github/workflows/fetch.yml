@@ -1,41 +1,45 @@
-name: Fetch PM2.5 (DEBUG)
+name: Fetch PM2.5
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "0 * * * *"   # ทุก 1 ชั่วโมง
 
 jobs:
   run:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. ดึงโค้ด
+      # 1. ดึงโค้ดจาก repo
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. ติดตั้ง Python
+      # 2. ใช้ Python 3.11
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # 3. ติดตั้งไลบรารี
+      # 3. ติดตั้ง dependencies
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 4. DEBUG: สร้างและแสดง Firebase key
-      - name: Create Firebase key (DEBUG)
+      # 4. สร้างไฟล์ Firebase key (สำคัญสุด)
+      - name: Create Firebase key
         run: |
-          echo '${{ secrets.FIREBASE_KEY }}' > serviceAccountKey.json
-          echo "====== DEBUG: FILE SIZE ======"
-          wc -c serviceAccountKey.json
-          echo "====== DEBUG: FILE CONTENT ======"
-          cat serviceAccountKey.json
+          cat <<EOF > serviceAccountKey.json
+${{ secrets.FIREBASE_KEY }}
+EOF
 
-      # 5. รันโปรแกรม
+      # 5. (Optional) เช็คว่าไฟล์ถูกสร้าง
+      - name: Check key file
+        run: |
+          echo "File size:"
+          wc -c serviceAccountKey.json
+
+      # 6. รัน Python
       - name: Run script
         run: |
           python main.py
