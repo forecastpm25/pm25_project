@@ -11,7 +11,10 @@ venv/
 
 # Firebase key (สำคัญมาก)
 serviceAccountKey.json
-*firebase_key*.json
+firebase_key.json
+*.json
+*firebase*
+serviceAccountKey.json
 
 # Data files (ถ้าไม่อยากอัปขึ้น git)
 data/
