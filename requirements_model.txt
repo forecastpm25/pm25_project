@@ -1,10 +1,7 @@
-flask
-numpy
+numpy==1.26.4
 pandas
 scikit-learn
-joblib
 tensorflow==2.15.0
-firebase-admin
-requests
-pytz
+joblib
 statsmodels
+firebase-admin
