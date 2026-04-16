@@ -3,15 +3,16 @@ import pandas as pd
 import joblib
 import json
 import os
-
+import firebase_admin
+from firebase_admin import credentials, firestore
 from tensorflow.keras.models import load_model
 import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime
 
 # ===== FIREBASE =====
-firebase_key = json.loads(os.environ["FIREBASE_KEY"])
-cred = credentials.Certificate(firebase_key)
+cred = credentials.Certificate("serviceAccountKey.json")
+
 if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 
