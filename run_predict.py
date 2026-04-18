@@ -36,16 +36,16 @@ FEATURES = [
 # ==============================
 DRIVE_LINKS = {
     "station_5030": {
-        "lstm": "https://drive.google.com/file/d/uc?id=1dd2ghsr42Ri9kYxaQXy7dJ6VvNAXrh-O/view?usp=sharing",
-        "x_scaler": "https://drive.google.com/file/d/uc?id=1An9OyJWwXG_U-1PDQo91HFINVa16PKYG/view?usp=sharing",
-        "y_scaler": "https://drive.google.com/file/d/uc?id=14oRLg7kWvGk50v5cWboZwkhY-OfikrNh/view?usp=sharing",
-        "arima": "https://drive.google.com/file/d/uc?id=1-s74diG8a-1J3xrIO3Y15HPEdqBu6oO-/view?usp=sharing"
+        "lstm": "https://drive.google.com/file/d/uc?id=1dd2ghsr42Ri9kYxaQXy7dJ6VvNAXrh-O",
+        "x_scaler": "https://drive.google.com/file/d/uc?id=1An9OyJWwXG_U-1PDQo91HFINVa16PKYG",
+        "y_scaler": "https://drive.google.com/file/d/uc?id=14oRLg7kWvGk50v5cWboZwkhY-OfikrNh",
+        "arima": "https://drive.google.com/file/d/uc?id=1-s74diG8a-1J3xrIO3Y15HPEdqBu6oO-"
     },
     "station_3295": {
-        "lstm": "https://drive.google.com/file/d/uc?id=1St9YNrJCppsRQHJ42Bt0tuCGjTCYbFNa/view?usp=sharing",
-        "x_scaler": "https://drive.google.com/file/d/uc?id=1UHxW__2h4g_dC7K-Nc_pggYWWcwbjqxw/view?usp=sharing",
-        "y_scaler": "https://drive.google.com/file/d/uc?id=1CXji3AgLPJnbcMbXGgm6vLfL6YhusI8o/view?usp=sharing",
-        "arima": "https://drive.google.com/file/d/uc?id=1xwnFmFM6Tmp8-Z5O4roYgf0TJEWT26H_/view?usp=sharing"
+        "lstm": "https://drive.google.com/file/d/uc?id=1St9YNrJCppsRQHJ42Bt0tuCGjTCYbFNa",
+        "x_scaler": "https://drive.google.com/file/d/uc?id=1UHxW__2h4g_dC7K-Nc_pggYWWcwbjqxw",
+        "y_scaler": "https://drive.google.com/file/d/uc?id=1CXji3AgLPJnbcMbXGgm6vLfL6YhusI8o",
+        "arima": "https://drive.google.com/file/d/uc?id=1xwnFmFM6Tmp8-Z5O4roYgf0TJEWT26H_"
     }
 }
 
