@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Create Firebase key file
+        run: echo '${{ secrets.FIREBASE_KEY }}' > serviceAccountKey.json
+        
       # 5) เช็คแพ็กเกจ (debug กันพัง)
       - name: Verify installed packages
         run: pip list
