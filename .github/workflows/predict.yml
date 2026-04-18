@@ -1,40 +1,31 @@
-name: Run Prediction
+name: PM2.5 Prediction
 
 on:
-  workflow_dispatch:
   schedule:
     - cron: "0 * * * *"   # รันทุก 1 ชั่วโมง
+  workflow_dispatch:      # กด run เองได้
 
 jobs:
   predict:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) ดึงโค้ดจาก GitHub
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: 📥 Checkout repo
+      uses: actions/checkout@v4
 
-      # 2) ตั้งค่า Python
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
 
-      # 3) อัปเกรด pip
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
+    - name: 📦 Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
 
-      # 4) ติดตั้ง dependencies (จุดสำคัญสุด)
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+    - name: 🔑 Create Firebase key
+      run: |
+        echo '${{ secrets.FIREBASE_KEY }}' > serviceAccountKey.json
 
-      - name: Create Firebase key file
-        run: echo '${{ secrets.FIREBASE_KEY }}' > serviceAccountKey.json
-        
-      # 5) เช็คแพ็กเกจ (debug กันพัง)
-      - name: Verify installed packages
-        run: pip list
-
-      # 6) รันโมเดล predict
-      - name: Run prediction
-        run: python run_predict.py
+    - name: 🚀 Run prediction
+      run: python run_predict.py

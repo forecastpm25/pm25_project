@@ -1,24 +1,17 @@
 import numpy as np
 import pandas as pd
 import joblib
-import json
 import os
-import firebase_admin
-from firebase_admin import credentials, firestore
-from tensorflow.keras.models import load_model
-import firebase_admin
-from firebase_admin import credentials, firestore
+import gdown
 from datetime import datetime
+from tensorflow.keras.models import load_model
 
-# ===== FIREBASE =====
-cred = credentials.Certificate("serviceAccountKey.json")
+import firebase_admin
+from firebase_admin import credentials, firestore
 
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
-
-db = firestore.client()
-
-# ===== CONFIG =====
+# ==============================
+# 🔥 CONFIG
+# ==============================
 LOOKBACK = 48
 HORIZONS = list(range(1,25)) + [48,72]
 
@@ -38,17 +31,62 @@ FEATURES = [
     "month_sin","month_cos"
 ]
 
-# ===== LOAD MODEL =====
-MODELS = {}
-for s in STATIONS:
-    path = f"models/{s['name']}"
-    MODELS[s["name"]] = {
-        "model": load_model(f"{path}/lstm_model.h5"),
-        "x_scaler": joblib.load(f"{path}/x_scaler.pkl"),
-        "y_scaler": joblib.load(f"{path}/y_scaler.pkl")
+# ==============================
+# 🔥 GOOGLE DRIVE LINKS (ใส่ของคุณ)
+# ==============================
+DRIVE_LINKS = {
+    "station_5030": {
+        "lstm": "https://drive.google.com/file/d/uc?id=1dd2ghsr42Ri9kYxaQXy7dJ6VvNAXrh-O/view?usp=sharing",
+        "x_scaler": "https://drive.google.com/file/d/uc?id=1An9OyJWwXG_U-1PDQo91HFINVa16PKYG/view?usp=sharing",
+        "y_scaler": "https://drive.google.com/file/d/uc?id=14oRLg7kWvGk50v5cWboZwkhY-OfikrNh/view?usp=sharing",
+        "arima": "https://drive.google.com/file/d/uc?id=1-s74diG8a-1J3xrIO3Y15HPEdqBu6oO-/view?usp=sharing"
+    },
+    "station_3295": {
+        "lstm": "https://drive.google.com/file/d/uc?id=1St9YNrJCppsRQHJ42Bt0tuCGjTCYbFNa/view?usp=sharing",
+        "x_scaler": "https://drive.google.com/file/d/uc?id=1UHxW__2h4g_dC7K-Nc_pggYWWcwbjqxw/view?usp=sharing",
+        "y_scaler": "https://drive.google.com/file/d/uc?id=1CXji3AgLPJnbcMbXGgm6vLfL6YhusI8o/view?usp=sharing",
+        "arima": "https://drive.google.com/file/d/uc?id=1xwnFmFM6Tmp8-Z5O4roYgf0TJEWT26H_/view?usp=sharing"
     }
+}
 
-# ===== PREPROCESS =====
+# ==============================
+# 🔥 DOWNLOAD MODEL
+# ==============================
+def download_models():
+    for s in STATIONS:
+        name = s["name"]
+        path = f"models/{name}"
+        os.makedirs(path, exist_ok=True)
+
+        links = DRIVE_LINKS[name]
+
+        files = {
+            "lstm_model.h5": links["lstm"],
+            "x_scaler.pkl": links["x_scaler"],
+            "y_scaler.pkl": links["y_scaler"],
+            "arima.pkl": links["arima"]
+        }
+
+        for fname, url in files.items():
+            fpath = f"{path}/{fname}"
+            if not os.path.exists(fpath):
+                print(f"⬇️ downloading {fname}")
+                gdown.download(url, fpath, quiet=False)
+
+# ==============================
+# 🔥 FIREBASE
+# ==============================
+def init_firebase():
+    cred = credentials.Certificate("serviceAccountKey.json")
+
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app(cred)
+
+    return firestore.client()
+
+# ==============================
+# 🔥 PREPROCESS
+# ==============================
 def preprocess(df):
     df["datetime"] = pd.to_datetime(df["timestamp"])
     df = df.rename(columns={"pm25": "pm2.5"})
@@ -87,13 +125,39 @@ def preprocess(df):
     df["diff_1"] = df["pm2.5"].diff()
     df["diff_24"] = df["pm2.5"].diff(24)
 
-    df = df.dropna()
-    return df
+    return df.dropna()
 
-# ===== RUN =====
-def run():
+# ==============================
+# 🔥 LOAD MODEL
+# ==============================
+def load_models():
+    MODELS = {}
+
     for s in STATIONS:
-        print("🚀 Predict:", s["name"])
+        name = s["name"]
+        path = f"models/{name}"
+
+        MODELS[name] = {
+            "model": load_model(f"{path}/lstm_model.h5"),
+            "x_scaler": joblib.load(f"{path}/x_scaler.pkl"),
+            "y_scaler": joblib.load(f"{path}/y_scaler.pkl"),
+            "arima": joblib.load(f"{path}/arima.pkl")
+        }
+
+    return MODELS
+
+# ==============================
+# 🔥 RUN
+# ==============================
+def run():
+    print("🚀 START")
+
+    download_models()
+    db = init_firebase()
+    MODELS = load_models()
+
+    for s in STATIONS:
+        print("🔍", s["name"])
 
         docs = db.collection(s["collection"]).stream()
         data = [d.to_dict() for d in docs]
@@ -109,25 +173,34 @@ def run():
             continue
 
         last = df.tail(LOOKBACK)
+        pack = MODELS[s["name"]]
 
-        model_pack = MODELS[s["name"]]
-
-        x = model_pack["x_scaler"].transform(last[FEATURES])
+        x = pack["x_scaler"].transform(last[FEATURES])
         x = np.expand_dims(x, axis=0)
 
-        pred = model_pack["model"].predict(x, verbose=0)[0]
-        pred = model_pack["y_scaler"].inverse_transform(pred.reshape(-1,1)).flatten()
+        # ===== LSTM =====
+        lstm_pred = pack["model"].predict(x, verbose=0)[0]
 
+        # ===== ARIMA =====
+        residual_pred = pack["arima"].forecast(steps=len(HORIZONS))
+
+        # ===== COMBINE =====
+        pred = lstm_pred + residual_pred
+
+        pred = pack["y_scaler"].inverse_transform(pred.reshape(-1,1)).flatten()
         pred = np.expm1(pred)
         pred = np.clip(pred, 0, 300)
 
-        result = {f"t+{h}": float(v) for h, v in zip(HORIZONS, pred)}
+        result = {f"t+{h}": float(v) for h,v in zip(HORIZONS, pred)}
         result["station"] = s["name"]
         result["created_at"] = datetime.now().isoformat()
 
         db.collection("pm25_prediction").add(result)
 
-        print("✅ done")
+        print("✅ done", s["name"])
 
+    print("🎉 FINISH")
+
+# ==============================
 if __name__ == "__main__":
     run()
