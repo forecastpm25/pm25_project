@@ -71,8 +71,7 @@ def download_models():
             fpath = f"{path}/{fname}"
             if not os.path.exists(fpath):
                 print(f"⬇️ downloading {fname}")
-                gdown.download(url, fpath, quiet=False)
-
+                gdown.download(url, fpath, quiet=False, fuzzy=True)
 # ==============================
 # 🔥 FIREBASE
 # ==============================
