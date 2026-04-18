@@ -4,6 +4,7 @@ import joblib
 import os
 import gdown
 from datetime import datetime
+import pytz
 from tensorflow.keras.models import load_model
 
 import firebase_admin
@@ -192,7 +193,10 @@ def run():
 
         result = {f"t+{h}": float(v) for h,v in zip(HORIZONS, pred)}
         result["station"] = s["name"]
-        result["created_at"] = datetime.now().isoformat()
+        tz = pytz.timezone("Asia/Bangkok")
+        now = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+
+        result["created_at"] = now
 
         db.collection("pm25_prediction").add(result)
 
