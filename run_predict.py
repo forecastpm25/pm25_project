@@ -194,11 +194,13 @@ def run():
         result = {f"t+{h}": round(float(v), 2) for h, v in zip(HORIZONS, pred)}
         result["station"] = s["name"]
         tz = pytz.timezone("Asia/Bangkok")
-        now = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.now(tz)
 
-        result["created_at"] = now
+        doc_id = f"{s['name']}_{datetime.now(tz).strftime('%Y%m%d_%H%M%S')}"
+        
+        result["created_at"] = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        db.collection("pm25_prediction").add(result)
+        db.collection("pm25_prediction").document(doc_id).set(result)
 
         print("✅ done", s["name"])
 
