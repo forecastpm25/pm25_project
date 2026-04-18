@@ -191,7 +191,7 @@ def run():
         pred = np.expm1(pred)
         pred = np.clip(pred, 0, 300)
 
-        result = {f"t+{h}": float(v) for h,v in zip(HORIZONS, pred)}
+        result = {f"t+{h}": round(float(v), 2) for h, v in zip(HORIZONS, pred)}
         result["station"] = s["name"]
         tz = pytz.timezone("Asia/Bangkok")
         now = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
