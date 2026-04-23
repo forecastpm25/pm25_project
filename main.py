@@ -1,23 +1,35 @@
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 import firebase_admin
 from firebase_admin import credentials, firestore
 
+# =========================
+# 🔐 Firebase
+# =========================
 cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
-
 db = firestore.client()
+
+# =========================
+# 🇹🇭 เวลาไทย
+# =========================
+thai_tz = pytz.timezone("Asia/Bangkok")
+
+# =========================
+# ⏱ กันยิงซ้ำ
+# =========================
 def should_run():
     doc_ref = db.collection("system").document("last_run")
     doc = doc_ref.get()
 
-    now = datetime.utcnow()
+    now = datetime.now(thai_tz)
 
     if doc.exists:
         last_run = doc.to_dict().get("time")
         if last_run:
-            last_run = last_run.replace(tzinfo=None)
+            last_run = last_run.astimezone(thai_tz)
+
             if now - last_run < timedelta(hours=1):
                 print("⏭️ Skip (ยังไม่ครบ 1 ชม.)")
                 return False
@@ -26,6 +38,9 @@ def should_run():
     doc_ref.set({"time": now})
     return True
 
+# =========================
+# 🔑 API
+# =========================
 API_KEY = "v8JhZtLUNsQKZrmVb4f0Vz0762WaCQdlwHLgjjwa"
 
 STATIONS = [
@@ -33,24 +48,48 @@ STATIONS = [
     {"id": "3295", "collection": "pm25_station_3295"}
 ]
 
+# =========================
+# 🚀 main
+# =========================
 def run():
-    now = datetime.now(pytz.timezone("Asia/Bangkok"))
+    now = datetime.now(thai_tz)
+    print("🇹🇭 เวลาไทย:", now)
+
+    # 🔥 ต้องเช็คก่อน
+    if not should_run():
+        return
+
+    print("🚀 RUNNING JOB...")
 
     for s in STATIONS:
-        url = f"https://open-api.cmuccdc.org/api/dustboy/station/{s['id']}?apikey={API_KEY}"
-        res = requests.get(url)
-        data = res.json()
+        try:
+            url = f"https://open-api.cmuccdc.org/api/dustboy/station/{s['id']}?apikey={API_KEY}"
+            res = requests.get(url)
 
-        if isinstance(data, dict):
-            data = [data]
+            if res.status_code != 200:
+                print("❌ API ERROR:", res.status_code)
+                continue
 
-        for i, item in enumerate(data):
-            db.collection(s["collection"]).document(f"{int(now.timestamp())}_{i}").set({
-                "pm25": item.get("pm25"),
-                "temp": item.get("temp"),
-                "humid": item.get("humid"),
-                "timestamp": now.isoformat()
-            })
+            data = res.json()
 
+            if isinstance(data, dict):
+                data = [data]
+
+            for i, item in enumerate(data):
+                db.collection(s["collection"]).document(f"{int(now.timestamp())}_{i}").set({
+                    "pm25": item.get("pm25"),
+                    "temp": item.get("temp"),
+                    "humid": item.get("humid"),
+                    "timestamp": now.isoformat()
+                })
+
+            print(f"✅ บันทึกสถานี {s['id']}")
+
+        except Exception as e:
+            print(f"🔥 ERROR station {s['id']}:", e)
+
+# =========================
+# ▶️ run
+# =========================
 if __name__ == "__main__":
     run()
