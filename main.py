@@ -8,6 +8,23 @@ cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 
 db = firestore.client()
+def should_run():
+    doc_ref = db.collection("system").document("last_run")
+    doc = doc_ref.get()
+
+    now = datetime.utcnow()
+
+    if doc.exists:
+        last_run = doc.to_dict().get("time")
+        if last_run:
+            last_run = last_run.replace(tzinfo=None)
+            if now - last_run < timedelta(hours=1):
+                print("⏭️ Skip (ยังไม่ครบ 1 ชม.)")
+                return False
+
+    # update เวลา
+    doc_ref.set({"time": now})
+    return True
 
 API_KEY = "v8JhZtLUNsQKZrmVb4f0Vz0762WaCQdlwHLgjjwa"
 

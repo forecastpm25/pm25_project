@@ -3,7 +3,7 @@ name: Fetch PM2.5
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 * * * *"   # ทุก 1 ชั่วโมง
+    - cron: "*/15 * * * *"   # ทุก 1 ชั่วโมง
 
 jobs:
   run:
