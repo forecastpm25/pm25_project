@@ -17,7 +17,7 @@ db = firestore.client()
 thai_tz = pytz.timezone("Asia/Bangkok")
 
 # =========================
-# ⏱ กันยิงซ้ำ
+# ⏱ กันยิงซ้ำ (1 ชั่วโมง)
 # =========================
 def should_run():
     doc_ref = db.collection("system").document("last_run")
@@ -30,7 +30,10 @@ def should_run():
         if last_run:
             last_run = last_run.astimezone(thai_tz)
 
-            if now - last_run < timedelta(hours=1):
+            diff = now - last_run
+            print(f"⏱ เวลาห่าง: {diff}")
+
+            if diff < timedelta(hours=1):
                 print("⏭️ Skip (ยังไม่ครบ 1 ชม.)")
                 return False
 
@@ -55,11 +58,15 @@ def run():
     now = datetime.now(thai_tz)
     print("🇹🇭 เวลาไทย:", now)
 
-    # 🔥 ต้องเช็คก่อน
+    # 🔥 เช็คก่อน
     if not should_run():
         return
 
     print("🚀 RUNNING JOB...")
+
+    # 🔥 format เวลา
+    formatted_time = now.strftime("%d/%m/%Y %H:%M:%S")
+    doc_id_time = now.strftime("%Y-%m-%d_%H-%M-%S")
 
     for s in STATIONS:
         try:
@@ -67,7 +74,7 @@ def run():
             res = requests.get(url)
 
             if res.status_code != 200:
-                print("❌ API ERROR:", res.status_code)
+                print(f"❌ API ERROR ({s['id']}):", res.status_code)
                 continue
 
             data = res.json()
@@ -76,11 +83,19 @@ def run():
                 data = [data]
 
             for i, item in enumerate(data):
-                db.collection(s["collection"]).document(f"{int(now.timestamp())}_{i}").set({
+                doc_id = f"{doc_id_time}_{i}"
+
+                db.collection(s["collection"]).document(doc_id).set({
+                    "station_id": s["id"],
                     "pm25": item.get("pm25"),
                     "temp": item.get("temp"),
                     "humid": item.get("humid"),
-                    "timestamp": now.isoformat()
+
+                    # 👇 อ่านง่าย
+                    "timestamp": formatted_time,
+
+                    # 👇 เอาไว้ query / sort
+                    "timestamp_raw": now
                 })
 
             print(f"✅ บันทึกสถานี {s['id']}")
