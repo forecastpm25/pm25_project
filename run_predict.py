@@ -88,27 +88,34 @@ def init_firebase():
 # 🔥 PREPROCESS
 # ==============================
 def preprocess(df):
-df["datetime"] = pd.to_datetime(
-    df["timestamp"],
-    format="mixed",
-    dayfirst=True,
-    errors="coerce"
+    # ===== FIX DATETIME (รองรับ 2 format) =====
+    df["datetime"] = pd.to_datetime(
+        df["timestamp"],
+        format="mixed",     # รองรับหลาย format
+        dayfirst=True,      # สำคัญสำหรับ 23/04/2026
+        errors="coerce"     # กัน crash
     )
 
-df = df.dropna(subset=["datetime"])
+    # ลบแถวที่ parse ไม่ได้
+    df = df.dropna(subset=["datetime"])
+
+    # ===== CLEAN PM2.5 =====
     df = df.rename(columns={"pm25": "pm2.5"})
     df["pm2.5"] = pd.to_numeric(df["pm2.5"], errors="coerce")
 
     df = df.sort_values("datetime")
-    df = df[["datetime","pm2.5"]]
+    df = df[["datetime", "pm2.5"]]
 
+    # ===== RESAMPLE =====
     df = df.set_index("datetime").resample("1h").mean()
 
+    # ===== HANDLE MISSING =====
     df["is_missing"] = df["pm2.5"].isna().astype(int)
     df["pm2.5"] = df["pm2.5"].interpolate(method="time", limit=6)
 
     df = df.dropna().reset_index()
 
+    # ===== TIME FEATURES =====
     df["hour"] = df["datetime"].dt.hour
     df["dow"]  = df["datetime"].dt.dayofweek
     df["month"] = df["datetime"].dt.month
@@ -122,17 +129,22 @@ df = df.dropna(subset=["datetime"])
     df["month_sin"] = np.sin(2*np.pi*df["month"]/12)
     df["month_cos"] = np.cos(2*np.pi*df["month"]/12)
 
+    # ===== LAG =====
     df["lag_1"] = df["pm2.5"].shift(1)
     df["lag_24"] = df["pm2.5"].shift(24)
 
+    # ===== ROLLING =====
     df["rolling_mean_3"] = df["pm2.5"].rolling(3).mean()
     df["rolling_mean_6"] = df["pm2.5"].rolling(6).mean()
     df["rolling_std_6"]  = df["pm2.5"].rolling(6).std()
 
+    # ===== DIFF =====
     df["diff_1"] = df["pm2.5"].diff()
     df["diff_24"] = df["pm2.5"].diff(24)
 
-    return df.dropna()
+    df = df.dropna()
+
+    return df
 
 # ==============================
 # 🔥 LOAD MODEL
