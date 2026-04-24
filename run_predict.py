@@ -87,29 +87,32 @@ def init_firebase():
 # ==============================
 # 🔥 PREPROCESS
 # ==============================
-def preprocess(df):
-    # ===== FIX DATETIME (รองรับ 2 format) =====
-    df["datetime"] = pd.to_datetime(
-        df["timestamp"],
-        format="mixed",     # รองรับหลาย format
-        dayfirst=True,      # สำคัญสำหรับ 23/04/2026
-        errors="coerce"     # กัน crash
-    )
+def parse_datetime_safe(x):
+    try:
+        # แบบใหม่: 23/04/2026 18:43:53
+        return pd.to_datetime(x, format="%d/%m/%Y %H:%M:%S")
+    except:
+        try:
+            # แบบเก่า: 2026-04-23T14:56:12.229644+07:00
+            return pd.to_datetime(x, format="ISO8601")
+        except:
+            return pd.NaT
 
-    # ลบแถวที่ parse ไม่ได้
+def preprocess(df):
+    # 🔥 ใช้ parser ใหม่
+    df["datetime"] = df["timestamp"].apply(parse_datetime_safe)
+
+    # ลบค่าที่ parse ไม่ได้
     df = df.dropna(subset=["datetime"])
 
-    # ===== CLEAN PM2.5 =====
     df = df.rename(columns={"pm25": "pm2.5"})
     df["pm2.5"] = pd.to_numeric(df["pm2.5"], errors="coerce")
 
     df = df.sort_values("datetime")
-    df = df[["datetime", "pm2.5"]]
+    df = df[["datetime","pm2.5"]]
 
-    # ===== RESAMPLE =====
     df = df.set_index("datetime").resample("1h").mean()
 
-    # ===== HANDLE MISSING =====
     df["is_missing"] = df["pm2.5"].isna().astype(int)
     df["pm2.5"] = df["pm2.5"].interpolate(method="time", limit=6)
 
@@ -143,7 +146,6 @@ def preprocess(df):
     df["diff_24"] = df["pm2.5"].diff(24)
 
     df = df.dropna()
-
     return df
 
 # ==============================
