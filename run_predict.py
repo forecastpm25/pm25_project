@@ -88,7 +88,14 @@ def init_firebase():
 # 🔥 PREPROCESS
 # ==============================
 def preprocess(df):
-    df["datetime"] = pd.to_datetime(df["timestamp"])
+df["datetime"] = pd.to_datetime(
+    df["timestamp"],
+    format="mixed",
+    dayfirst=True,
+    errors="coerce"
+    )
+
+df = df.dropna(subset=["datetime"])
     df = df.rename(columns={"pm25": "pm2.5"})
     df["pm2.5"] = pd.to_numeric(df["pm2.5"], errors="coerce")
 
