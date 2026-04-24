@@ -88,15 +88,14 @@ def init_firebase():
 # 🔥 PREPROCESS
 # ==============================
 def parse_datetime_safe(x):
-    try:
-        # แบบใหม่: 23/04/2026 18:43:53
-        return pd.to_datetime(x, format="%d/%m/%Y %H:%M:%S")
-    except:
-        try:
-            # แบบเก่า: 2026-04-23T14:56:12.229644+07:00
-            return pd.to_datetime(x, format="ISO8601")
-        except:
-            return pd.NaT
+    # 🔥 ลอง parse แบบใหม่ (dd/mm/yyyy)
+    dt = pd.to_datetime(x, format="%d/%m/%Y %H:%M:%S", errors="coerce")
+
+    # 🔥 ถ้า parse ไม่ได้ → ให้ pandas เดาเอง (รองรับ ISO)
+    if pd.isna(dt):
+        dt = pd.to_datetime(x, errors="coerce")
+
+    return dt
 
 def preprocess(df):
     # 🔥 ใช้ parser ใหม่
