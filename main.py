@@ -65,7 +65,7 @@ def run():
     print("🚀 RUNNING JOB...")
 
     # 🔥 format เวลา
-    formatted_time = now.strftime("%d/%m/%Y %H:%M:%S")
+    formatted_time = now.strftime("%Y-%m-%d %H:%M:%S")
     doc_id_time = now.strftime("%Y-%m-%d_%H-%M-%S")
 
     for s in STATIONS:
@@ -91,10 +91,10 @@ def run():
                     "temp": item.get("temp"),
                     "humid": item.get("humid"),
 
-                    # 👇 อ่านง่าย
+                    
                     "timestamp": formatted_time,
 
-                    # 👇 เอาไว้ query / sort
+                    # เอาไว้ query / sort
                     "timestamp_raw": now
                 })
 
